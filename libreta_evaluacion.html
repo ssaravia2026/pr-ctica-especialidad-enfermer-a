@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Libreta de Evaluación de Prácticas</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: #f0f4f8; color: #1a2332; }
+
+  .header {
+    background: linear-gradient(135deg, #1a3a5c 0%, #2563a8 100%);
+    color: white; padding: 18px 24px; display: flex; align-items: center; gap: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  .header-icon { font-size: 2rem; }
+  .header h1 { font-size: 1rem; font-weight: 700; line-height: 1.3; }
+  .header p { font-size: 0.75rem; opacity: 0.85; margin-top: 2px; }
+
+  .nav {
+    background: #1a3a5c; display: flex; overflow-x: auto; padding: 0 8px;
+    border-bottom: 3px solid #2563a8;
+  }
+  .nav button {
+    background: none; border: none; color: rgba(255,255,255,0.7);
+    padding: 12px 14px; font-size: 0.72rem; font-weight: 600; cursor: pointer;
+    white-space: nowrap; border-bottom: 3px solid transparent; margin-bottom: -3px;
+    transition: all 0.2s; text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .nav button.active { color: #fff; border-bottom-color: #60b3ff; }
+  .nav button:hover { color: #fff; }
+
+  .content { max-width: 860px; margin: 0 auto; padding: 20px 16px; }
+
+  .card {
+    background: white; border-radius: 12px; padding: 20px;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.08); margin-bottom: 16px;
+  }
+  .card-title {
+    font-size: 0.85rem; font-weight: 700; color: #1a3a5c;
+    text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px;
+    padding-bottom: 8px; border-bottom: 2px solid #e2e8f0;
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .form-group { display: flex; flex-direction: column; gap: 4px; }
+  .form-group.full { grid-column: 1/-1; }
+  label { font-size: 0.75rem; font-weight: 600; color: #4a5568; text-transform: uppercase; }
+  input, select, textarea {
+    border: 1.5px solid #e2e8f0; border-radius: 8px; padding: 9px 12px;
+    font-size: 0.88rem; color: #1a2332; transition: border-color 0.2s;
+    background: #f8fafc;
+  }
+  input:focus, select:focus, textarea:focus {
+    outline: none; border-color: #2563a8; background: white;
+  }
+  textarea { resize: vertical; min-height: 70px; }
+
+  /* Requisitos checklist */
+  .req-list { display: flex; flex-direction: column; gap: 8px; }
+  .req-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px; border-radius: 8px; background: #f8fafc;
+    border: 1.5px solid #e2e8f0; cursor: pointer; transition: all 0.2s;
+  }
+  .req-item.checked { background: #f0fdf4; border-color: #22c55e; }
+  .req-item input[type=checkbox] { width: 18px; height: 18px; accent-color: #22c55e; cursor: pointer; }
+  .req-item span { font-size: 0.85rem; }
+
+  /* Tabla de habilidades */
+  .skills-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+  .skills-table th {
+    background: #1a3a5c; color: white; padding: 8px 10px;
+    text-align: left; font-weight: 600; font-size: 0.72rem;
+  }
+  .skills-table td { padding: 8px 10px; border-bottom: 1px solid #e2e8f0; vertical-align: middle; }
+  .skills-table tr:hover td { background: #f8fafc; }
+  .skills-table tr:last-child td { border-bottom: none; }
+  .skill-name { font-weight: 500; color: #1a2332; }
+
+  .nivel-btns { display: flex; gap: 4px; flex-wrap: wrap; }
+  .nivel-btn {
+    border: none; border-radius: 6px; padding: 5px 9px; font-size: 0.7rem;
+    font-weight: 700; cursor: pointer; opacity: 0.35; transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .nivel-btn.active { opacity: 1; transform: scale(1.05); }
+  .nivel-btn.n1 { background: #fee2e2; color: #991b1b; }
+  .nivel-btn.n2 { background: #fef9c3; color: #854d0e; }
+  .nivel-btn.n3 { background: #ffedd5; color: #9a3412; }
+  .nivel-btn.n4 { background: #dcfce7; color: #166534; }
+
+  .obs-input {
+    width: 100%; border: 1px solid #e2e8f0; border-radius: 6px;
+    padding: 5px 8px; font-size: 0.75rem; background: #f8fafc;
+  }
+
+  /* Sesion header */
+  .sesion-header {
+    display: flex; justify-content: space-between; align-items: center;
+    background: #eff6ff; padding: 10px 14px; border-radius: 8px; margin-bottom: 12px;
+    flex-wrap: wrap; gap: 8px;
+  }
+  .sesion-header label { font-size: 0.75rem; font-weight: 600; color: #1a3a5c; }
+  .sesion-header input { padding: 6px 10px; font-size: 0.8rem; border-radius: 6px; }
+
+  /* Progreso */
+  .progress-bar-wrap { background: #e2e8f0; border-radius: 99px; height: 8px; margin: 6px 0 2px; }
+  .progress-bar { height: 8px; border-radius: 99px; background: linear-gradient(90deg, #2563a8, #22c55e); transition: width 0.4s; }
+  .progress-label { font-size: 0.72rem; color: #64748b; text-align: right; }
+
+  /* Resumen */
+  .resumen-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .resumen-card {
+    background: #f8fafc; border-radius: 10px; padding: 14px;
+    border: 1.5px solid #e2e8f0; text-align: center;
+  }
+  .resumen-card .valor { font-size: 1.8rem; font-weight: 800; color: #1a3a5c; }
+  .resumen-card .etiq { font-size: 0.72rem; color: #64748b; font-weight: 600; text-transform: uppercase; }
+  .nivel-legend {
+    display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px;
+  }
+  .nivel-badge {
+    padding: 4px 10px; border-radius: 99px; font-size: 0.72rem; font-weight: 700;
+  }
+
+  /* Botones */
+  .btn {
+    border: none; border-radius: 8px; padding: 10px 20px; font-size: 0.85rem;
+    font-weight: 700; cursor: pointer; transition: all 0.2s; display: inline-flex;
+    align-items: center; gap: 8px;
+  }
+  .btn-primary { background: #2563a8; color: white; }
+  .btn-primary:hover { background: #1a4f8a; }
+  .btn-success { background: #16a34a; color: white; }
+  .btn-success:hover { background: #15803d; }
+  .btn-danger { background: #dc2626; color: white; }
+  .btn-danger:hover { background: #b91c1c; }
+  .btn-outline { background: white; color: #1a3a5c; border: 2px solid #1a3a5c; }
+  .btn-outline:hover { background: #f0f4f8; }
+  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+
+  .alert {
+    padding: 12px 16px; border-radius: 8px; font-size: 0.85rem; margin-bottom: 14px;
+  }
+  .alert-info { background: #eff6ff; color: #1e40af; border-left: 4px solid #2563a8; }
+  .alert-success { background: #f0fdf4; color: #166534; border-left: 4px solid #22c55e; }
+  .alert-warning { background: #fffbeb; color: #92400e; border-left: 4px solid #f59e0b; }
+
+  .section-locked { opacity: 0.5; pointer-events: none; }
+  .badge-cuatri {
+    display: inline-block; background: #2563a8; color: white;
+    border-radius: 99px; padding: 2px 10px; font-size: 0.7rem; font-weight: 700;
+  }
+
+  @media (max-width: 600px) {
+    .form-grid { grid-template-columns: 1fr; }
+    .skills-table { font-size: 0.72rem; }
+    .nivel-btns { gap: 2px; }
+    .nivel-btn { padding: 4px 6px; font-size: 0.65rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-icon">🏥</div>
+  <div>
+    <h1>LIBRETA DE REGISTRO Y EVALUACIÓN DE PRÁCTICAS</h1>
+    <p>Especialización en Enfermería en Atención del Paciente Crítico Adulto</p>
+  </div>
+</div>
+
+<nav class="nav" id="nav">
+  <button class="active" onclick="showTab('portada')">📋 Portada</button>
+  <button onclick="showTab('ce1')">🏥 Cuidados Enf. 1</button>
+  <button onclick="showTab('ce2')">🏥 Cuidados Enf. 2</button>
+  <button onclick="showTab('ce3')">🏥 Cuidados Enf. 3</button>
+  <button onclick="showTab('integ')">⭐ Práctica Integrada</button>
+  <button onclick="showTab('resumen')">📊 Resumen Final</button>
+</nav>
+
+<div class="content">
+
+<!-- PORTADA -->
+<div id="tab-portada">
+  <div class="card">
+    <div class="card-title">📋 Datos de Identificación</div>
+    <div class="form-grid">
+      <div class="form-group full">
+        <label>Estudiante: Lic.</label>
+        <input type="text" id="nombre" placeholder="Apellido y Nombre completo" oninput="saveData()">
+      </div>
+      <div class="form-group">
+        <label>DNI</label>
+        <input type="text" id="dni" placeholder="00.000.000" oninput="saveData()">
+      </div>
+      <div class="form-group">
+        <label>Año de Ingreso</label>
+        <input type="number" id="anio" placeholder="2024" oninput="saveData()">
+      </div>
+      <div class="form-group">
+        <label>Cuatrimestre</label>
+        <select id="cuatrimestre" onchange="saveData()">
+          <option value="">Seleccionar...</option>
+          <option>1° Cuatrimestre 2024</option>
+          <option>2° Cuatrimestre 2024</option>
+          <option>1° Cuatrimestre 2025</option>
+          <option>2° Cuatrimestre 2025</option>
+          <option>1° Cuatrimestre 2026</option>
+          <option>2° Cuatrimestre 2026</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Sede / Hospital</label>
+        <input type="text" id="sede" placeholder="Hospital o institución" oninput="saveData()">
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">✅ Requisitos para la Práctica</div>
+    <p style="font-size:0.8rem;color:#64748b;margin-bottom:12px;">Verificar el cumplimiento de requisitos antes de cada práctica.</p>
+    <div class="req-list">
+      <label class="req-item" id="req0">
+        <input type="checkbox" onchange="toggleReq(0)"> <span>👔 Ambo blanco</span>
+      </label>
+      <label class="req-item" id="req1">
+        <input type="checkbox" onchange="toggleReq(1)"> <span>🪪 Identificación personal</span>
+      </label>
+      <label class="req-item" id="req2">
+        <input type="checkbox" onchange="toggleReq(2)"> <span>🩺 Material de bolsillo (libreta, lapicera, estetoscopio, linterna pupilar)</span>
+      </label>
+      <label class="req-item" id="req3">
+        <input type="checkbox" onchange="toggleReq(3)"> <span>📄 Ficha de salud actualizada y firmada por médico</span>
+      </label>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📖 Escala de Niveles de Evaluación</div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <div style="display:flex;align-items:center;gap:10px;padding:8px;background:#fee2e2;border-radius:8px;">
+        <span style="font-weight:800;color:#991b1b;min-width:28px;">N1</span>
+        <div><strong style="color:#991b1b;">Saber</strong> — Conocimientos teóricos</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;padding:8px;background:#fef9c3;border-radius:8px;">
+        <span style="font-weight:800;color:#854d0e;min-width:28px;">N2</span>
+        <div><strong style="color:#854d0e;">Saber cómo</strong> — Aplica la teoría a situaciones hipotéticas</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;padding:8px;background:#ffedd5;border-radius:8px;">
+        <span style="font-weight:800;color:#9a3412;min-width:28px;">N3</span>
+        <div><strong style="color:#9a3412;">Demuestra cómo</strong> — Demuestra lo aprendido en casos simulados</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;padding:8px;background:#dcfce7;border-radius:8px;">
+        <span style="font-weight:800;color:#166534;min-width:28px;">N4</span>
+        <div><strong style="color:#166534;">Hacer</strong> — Demuestra con autonomía</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CUIDADOS ENFERMERÍA 1 -->
+<div id="tab-ce1" style="display:none">
+  <div id="ce1-content"></div>
+</div>
+
+<!-- CUIDADOS ENFERMERÍA 2 -->
+<div id="tab-ce2" style="display:none">
+  <div id="ce2-content"></div>
+</div>
+
+<!-- CUIDADOS ENFERMERÍA 3 -->
+<div id="tab-ce3" style="display:none">
+  <div id="ce3-content"></div>
+</div>
+
+<!-- PRÁCTICA INTEGRADA -->
+<div id="tab-integ" style="display:none">
+  <div id="integ-content"></div>
+</div>
+
+<!-- RESUMEN FINAL -->
+<div id="tab-resumen" style="display:none">
+  <div id="resumen-content"></div>
+</div>
+
+</div>
+
+<script>
+// ===================== DATOS =====================
+const MODULOS = [
+  {
+    id: 'ce1', titulo: 'Cuidados de Enfermería 1',
+    icon: '🏥', sesiones: 3,
+    habilidades: [
+      'Valoración del paciente crítico (A-B-C-D-E)',
+      'Monitorización hemodinámica invasiva',
+      'Manejo de vía aérea artificial (TOT/TQT)',
+      'Aspiración de secreciones',
+      'Ventilación mecánica: parámetros básicos',
+      'Cuidados del paciente ventilado',
+      'Accesos venosos centrales: cuidados',
+      'Administración de drogas vasoactivas',
+      'Balance hídrico estricto',
+      'Posicionamiento terapéutico',
+      'Prevención de UPP en el paciente crítico',
+      'Higiene y confort del paciente en UCI',
+    ]
+  },
+  {
+    id: 'ce2', titulo: 'Cuidados de Enfermería 2',
+    icon: '🏥', sesiones: 3,
+    habilidades: [
+      'Interpretación de ECG básico',
+      'Manejo de arritmias: reconocimiento y acción',
+      'Desfibrilación y cardioversión',
+      'RCP básico y avanzado',
+      'Manejo de marcapasos transitorio',
+      'Catéter de Swan-Ganz: cuidados y medición',
+      'Drogas en situaciones de emergencia',
+      'Preparación y administración de NPT',
+      'Nutrición enteral en UCI: cuidados',
+      'Cuidados post-procedimiento invasivo',
+      'Manejo del dolor y sedoanalgesia',
+      'Prevención de infecciones asociadas a catéter',
+    ]
+  },
+  {
+    id: 'ce3', titulo: 'Cuidados de Enfermería 3',
+    icon: '🏥', sesiones: 3,
+    habilidades: [
+      'Hemodiálisis/TRRC: cuidados de enfermería',
+      'Manejo del paciente con falla renal aguda',
+      'Cuidados en trauma: valoración primaria y secundaria',
+      'Manejo del paciente neurocrítico',
+      'Cuidados post-operatorios de cirugía cardíaca',
+      'Interpretación de gases en sangre arterial',
+      'Manejo del paciente séptico (Sepsis 3)',
+      'Cuidados en el paciente con shock',
+      'Donación de órganos: rol del enfermero',
+      'Transporte intrahospitalario del paciente crítico',
+      'Registros de enfermería en UCI',
+      'Comunicación con familia en UCI',
+    ]
+  },
+  {
+    id: 'integ', titulo: 'Práctica Integrada',
+    icon: '⭐', sesiones: 2,
+    habilidades: [
+      'Integración de valoración y plan de cuidados',
+      'Respuesta a situación de emergencia simulada',
+      'Coordinación interdisciplinaria en UCI',
+      'Toma de decisiones clínicas en situaciones complejas',
+      'Comunicación terapéutica y ética del cuidado',
+      'Gestión de recursos y seguridad del paciente',
+      'Liderazgo en situaciones críticas',
+      'Reflexión sobre la práctica profesional',
+    ]
+  }
+];
+
+let appData = {};
+
+function initData() {
+  const saved = localStorage.getItem('libreta_enf_data');
+  if (saved) {
+    appData = JSON.parse(saved);
+    loadForm();
+  } else {
+    appData = { nombre:'', dni:'', anio:'', cuatrimestre:'', sede:'', requisitos:[false,false,false,false], modulos:{} };
+    MODULOS.forEach(m => {
+      appData.modulos[m.id] = { sesiones: [] };
+      for (let s=0; s<m.sesiones; s++) {
+        appData.modulos[m.id].sesiones.push({
+          fecha:'', docente:'', habilidades: m.habilidades.map(()=>({nivel:null,obs:''}))
+        });
+      }
+    });
+  }
+}
+
+function saveData() {
+  appData.nombre = document.getElementById('nombre')?.value || appData.nombre;
+  appData.dni = document.getElementById('dni')?.value || appData.dni;
+  appData.anio = document.getElementById('anio')?.value || appData.anio;
+  appData.cuatrimestre = document.getElementById('cuatrimestre')?.value || appData.cuatrimestre;
+  appData.sede = document.getElementById('sede')?.value || appData.sede;
+  localStorage.setItem('libreta_enf_data', JSON.stringify(appData));
+}
+
+function loadForm() {
+  const f = (id, v) => { const el = document.getElementById(id); if(el) el.value = v||''; };
+  f('nombre', appData.nombre);
+  f('dni', appData.dni);
+  f('anio', appData.anio);
+  f('cuatrimestre', appData.cuatrimestre);
+  f('sede', appData.sede);
+  (appData.requisitos||[]).forEach((v,i)=>{
+    const el = document.querySelector(`#req${i} input`);
+    if(el){ el.checked=v; if(v) document.getElementById(`req${i}`).classList.add('checked'); }
+  });
+}
+
+function toggleReq(i) {
+  const el = document.querySelector(`#req${i} input`);
+  appData.requisitos[i] = el.checked;
+  document.getElementById(`req${i}`).classList.toggle('checked', el.checked);
+  saveData();
+}
+
+// ===================== TABS =====================
+function showTab(id) {
+  document.querySelectorAll('.content > div[id^="tab-"]').forEach(d => d.style.display='none');
+  document.getElementById('tab-'+id).style.display='block';
+  document.querySelectorAll('.nav button').forEach((b,i)=>{
+    b.classList.toggle('active', ['portada','ce1','ce2','ce3','integ','resumen'][i]===id);
+  });
+  if(id==='ce1'||id==='ce2'||id==='ce3'||id==='integ') renderModulo(id);
+  if(id==='resumen') renderResumen();
+}
+
+// ===================== MÓDULOS =====================
+function renderModulo(id) {
+  const mod = MODULOS.find(m=>m.id===id);
+  const data = appData.modulos[id];
+  let html = '';
+
+  // Progreso
+  const total = mod.habilidades.length * mod.sesiones;
+  const completados = data.sesiones.reduce((a,s)=>a+s.habilidades.filter(h=>h.nivel!==null).length,0);
+  const pct = total ? Math.round(completados/total*100) : 0;
+  html += `<div class="card">
+    <div class="card-title">${mod.icon} ${mod.titulo}</div>
+    <div class="alert alert-info" style="font-size:0.8rem;">
+      <strong>Escala:</strong> N1 Saber · N2 Saber cómo · N3 Demuestra cómo · N4 Hacer (autonomía)
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div style="flex:1">
+        <div class="progress-bar-wrap"><div class="progress-bar" style="width:${pct}%"></div></div>
+      </div>
+      <span class="progress-label">${completados}/${total} evaluadas (${pct}%)</span>
+    </div>
+  </div>`;
+
+  data.sesiones.forEach((ses, si) => {
+    const sesN = si+1;
+    html += `<div class="card">
+      <div class="card-title">📅 Sesión ${sesN}</div>
+      <div class="sesion-header">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <label>Fecha:</label>
+          <input type="date" value="${ses.fecha}" onchange="setSesionField('${id}',${si},'fecha',this.value)">
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <label>Docente:</label>
+          <input type="text" placeholder="Nombre del docente/tutor" value="${ses.docente}" 
+            onchange="setSesionField('${id}',${si},'docente',this.value)" style="min-width:180px">
+        </div>
+      </div>
+      <div style="overflow-x:auto;">
+      <table class="skills-table">
+        <thead>
+          <tr>
+            <th style="min-width:220px;">Habilidad / Destreza</th>
+            <th style="min-width:240px;">Nivel alcanzado</th>
+            <th style="min-width:160px;">Observaciones docente</th>
+          <th style="min-width:160px;">Comentario estudiante</th>
+          </tr>
+        </thead>
+        <tbody>`;
+    mod.habilidades.forEach((hab, hi) => {
+      const h = ses.habilidades[hi];
+      html += `<tr>
+        <td class="skill-name">${hab}</td>
+        <td>
+          <div class="nivel-btns">
+            <button class="nivel-btn n1 ${h.nivel===1?'active':''}" onclick="setNivel('${id}',${si},${hi},1)">N1 Saber</button>
+            <button class="nivel-btn n2 ${h.nivel===2?'active':''}" onclick="setNivel('${id}',${si},${hi},2)">N2 Saber cómo</button>
+            <button class="nivel-btn n3 ${h.nivel===3?'active':''}" onclick="setNivel('${id}',${si},${hi},3)">N3 Demuestra</button>
+            <button class="nivel-btn n4 ${h.nivel===4?'active':''}" onclick="setNivel('${id}',${si},${hi},4)">N4 Hacer</button>
+          </div>
+        </td>
+        <td><input class="obs-input" type="text" placeholder="Observación docente..." value="${h.obs||''}"
+          onchange="setObs('${id}',${si},${hi},this.value)"></td>
+        <td><input class="obs-input" type="text" placeholder="Comentario del estudiante..." value="${h.comentEst||''}"
+          onchange="setComentEst('${id}',${si},${hi},this.value)" style="background:#fffbeb;border-color:#fcd34d;"></td>
+      </tr>`;
+    });
+    html += `</tbody></table></div></div>`;
+  });
+
+  document.getElementById(id+'-content').innerHTML = html;
+}
+
+function setSesionField(mod, si, field, val) {
+  appData.modulos[mod].sesiones[si][field] = val;
+  saveData();
+}
+function setNivel(mod, si, hi, nivel) {
+  const h = appData.modulos[mod].sesiones[si].habilidades[hi];
+  h.nivel = h.nivel===nivel ? null : nivel;
+  saveData();
+  renderModulo(mod);
+}
+function setObs(mod, si, hi, val) {
+  appData.modulos[mod].sesiones[si].habilidades[hi].obs = val;
+  saveData();
+}
+function setComentEst(mod, si, hi, val) {
+  appData.modulos[mod].sesiones[si].habilidades[hi].comentEst = val;
+  saveData();
+}
+
+// ===================== RESUMEN =====================
+function renderResumen() {
+  const nombre = appData.nombre || '(sin nombre)';
+  const cuatri = appData.cuatrimestre || '';
+
+  // Stats globales
+  let totalHab=0, evalHab=0, n4=0, n3=0, n2=0, n1=0;
+  MODULOS.forEach(m=>{
+    appData.modulos[m.id].sesiones.forEach(s=>{
+      s.habilidades.forEach(h=>{
+        totalHab++;
+        if(h.nivel!==null){ evalHab++; if(h.nivel===4)n4++; else if(h.nivel===3)n3++; else if(h.nivel===2)n2++; else n1++; }
+      });
+    });
+  });
+  const pct = totalHab?Math.round(evalHab/totalHab*100):0;
+  const nivelPred = n4>0?'N4 – Hacer':n3>0?'N3 – Demuestra cómo':n2>0?'N2 – Saber cómo':'N1 – Saber';
+
+  let html = `
+  <div class="card">
+    <div class="card-title">📊 Resumen Final del Cuatrimestre</div>
+    <div class="alert alert-info">
+      <strong>${nombre}</strong> ${cuatri?'· '+cuatri:''} · ${appData.sede||''}
+    </div>
+    <div class="resumen-grid">
+      <div class="resumen-card"><div class="valor">${evalHab}</div><div class="etiq">Habilidades evaluadas</div></div>
+      <div class="resumen-card"><div class="valor">${totalHab}</div><div class="etiq">Total habilidades</div></div>
+      <div class="resumen-card"><div class="valor">${pct}%</div><div class="etiq">Completado</div></div>
+      <div class="resumen-card"><div class="valor" style="font-size:1rem;padding-top:6px;">${nivelPred}</div><div class="etiq">Nivel predominante</div></div>
+    </div>
+    <div class="nivel-legend">
+      <span class="nivel-badge" style="background:#fee2e2;color:#991b1b;">N1 Saber: ${n1}</span>
+      <span class="nivel-badge" style="background:#fef9c3;color:#854d0e;">N2 Saber cómo: ${n2}</span>
+      <span class="nivel-badge" style="background:#ffedd5;color:#9a3412;">N3 Demuestra: ${n3}</span>
+      <span class="nivel-badge" style="background:#dcfce7;color:#166534;">N4 Hacer: ${n4}</span>
+    </div>
+  </div>`;
+
+  // Detalle por módulo
+  MODULOS.forEach(m=>{
+    const data = appData.modulos[m.id];
+    html += `<div class="card"><div class="card-title">${m.icon} ${m.titulo}</div>`;
+    data.sesiones.forEach((s,si)=>{
+      const eval_ = s.habilidades.filter(h=>h.nivel!==null).length;
+      html += `<div style="margin-bottom:10px;">
+        <div style="font-size:0.8rem;font-weight:700;color:#1a3a5c;margin-bottom:6px;">
+          Sesión ${si+1} ${s.fecha?'· '+s.fecha:''} ${s.docente?'· '+s.docente:''}
+          <span style="float:right;color:#64748b;">${eval_}/${m.habilidades.length} evaluadas</span>
+        </div>
+        <table style="width:100%;font-size:0.75rem;border-collapse:collapse;">`;
+      s.habilidades.forEach((h,hi)=>{
+        const nLabel = h.nivel?['','N1 Saber','N2 Saber cómo','N3 Demuestra','N4 Hacer'][h.nivel]:'—';
+        const nColor = h.nivel?['','#fee2e2','#fef9c3','#ffedd5','#dcfce7'][h.nivel]:'#f1f5f9';
+        const nText = h.nivel?['','#991b1b','#854d0e','#9a3412','#166534'][h.nivel]:'#94a3b8';
+        html += `<tr style="border-bottom:1px solid #f1f5f9;">
+          <td style="padding:4px 6px;">${m.habilidades[hi]}</td>
+          <td style="padding:4px 6px;white-space:nowrap;">
+            <span style="background:${nColor};color:${nText};padding:2px 8px;border-radius:99px;font-weight:700;">${nLabel}</span>
+          </td>
+          <td style="padding:4px 6px;color:#64748b;">${h.obs||''}</td>
+        </tr>`;
+      });
+      html += `</table></div>`;
+    });
+    html += `</div>`;
+  });
+
+  // Sección cierre
+  html += `<div class="card">
+    <div class="card-title">✍️ Cierre y Firma del Cuatrimestre</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Fecha de cierre</label>
+        <input type="date" id="fecha_cierre" value="${appData.fecha_cierre||''}" onchange="appData.fecha_cierre=this.value;saveData()">
+      </div>
+      <div class="form-group">
+        <label>Docente responsable</label>
+        <input type="text" id="docente_cierre" placeholder="Nombre del docente" value="${appData.docente_cierre||''}" oninput="appData.docente_cierre=this.value;saveData()">
+      </div>
+      <div class="form-group full">
+        <label>Conclusión / Evaluación final narrativa</label>
+        <textarea id="conclusion" placeholder="Escribir la evaluación final del cuatrimestre..."
+          oninput="appData.conclusion=this.value;saveData()">${appData.conclusion||''}</textarea>
+      </div>
+      <div class="form-group full">
+        <label>Recomendaciones y próximos pasos</label>
+        <textarea id="recomendaciones" placeholder="Recomendaciones para el estudiante..."
+          oninput="appData.recomendaciones=this.value;saveData()">${appData.recomendaciones||''}</textarea>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-success" onclick="generarPDF()">📄 Descargar PDF</button>
+      <button class="btn btn-primary" onclick="archivarEval()">💾 Archivar Evaluación</button>
+      <button class="btn btn-outline" onclick="verArchivadas()">📂 Ver Evaluaciones Guardadas</button>
+    </div>
+    <div id="msg-archivado" style="margin-top:10px;"></div>
+  </div>
+  <div id="archivadas-panel"></div>`;
+
+  document.getElementById('resumen-content').innerHTML = html;
+}
+
+// ===================== PDF =====================
+async function generarPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit:'mm', format:'a4' });
+  const W = 210, M = 15;
+  let y = 15;
+
+  const addTitle = (t, size=13) => {
+    doc.setFontSize(size); doc.setFont('helvetica','bold');
+    doc.setFillColor(26,58,92); doc.rect(M,y-5,W-M*2,9,'F');
+    doc.setTextColor(255,255,255); doc.text(t, M+3, y+1);
+    doc.setTextColor(0,0,0); y+=12;
+  };
+  const addSub = (t) => {
+    doc.setFontSize(10); doc.setFont('helvetica','bold');
+    doc.setTextColor(26,58,92); doc.text(t, M, y); y+=6; doc.setTextColor(0,0,0);
+  };
+  const addText = (t, size=9) => {
+    doc.setFontSize(size); doc.setFont('helvetica','normal');
+    const lines = doc.splitTextToSize(t, W-M*2);
+    lines.forEach(l=>{ if(y>280){doc.addPage();y=15;} doc.text(l, M, y); y+=5; });
+  };
+  const checkPage = (need=20) => { if(y+need>285){doc.addPage();y=15;} };
+
+  // Portada
+  doc.setFillColor(26,58,92); doc.rect(0,0,210,40,'F');
+  doc.setTextColor(255,255,255); doc.setFontSize(14); doc.setFont('helvetica','bold');
+  doc.text('LIBRETA DE REGISTRO Y EVALUACIÓN DE PRÁCTICAS', W/2, 18, {align:'center'});
+  doc.setFontSize(10);
+  doc.text('Especialización en Enfermería en Atención del Paciente Crítico Adulto', W/2, 27, {align:'center'});
+  doc.setTextColor(0,0,0); y=50;
+
+  addSub('DATOS DEL ESTUDIANTE');
+  addText(`Estudiante: Lic. ${appData.nombre||'—'}`);
+  addText(`DNI: ${appData.dni||'—'}   |   Año de ingreso: ${appData.anio||'—'}`);
+  addText(`Cuatrimestre: ${appData.cuatrimestre||'—'}   |   Sede: ${appData.sede||'—'}`);
+  y+=4;
+
+  const reqs = ['Ambo blanco','Identificación personal','Material de bolsillo','Ficha de salud'];
+  addSub('REQUISITOS');
+  reqs.forEach((r,i)=>{ addText(`${appData.requisitos[i]?'✓':'✗'} ${r}`); });
+  y+=4;
+
+  // Por módulo
+  MODULOS.forEach(m=>{
+    checkPage(30);
+    addTitle(m.titulo);
+    appData.modulos[m.id].sesiones.forEach((s,si)=>{
+      checkPage(20);
+      addSub(`Sesión ${si+1}${s.fecha?' — '+s.fecha:''}${s.docente?' — '+s.docente:''}`);
+      m.habilidades.forEach((hab,hi)=>{
+        const h = s.habilidades[hi];
+        const nv = h.nivel?['','N1 Saber','N2 Saber cómo','N3 Demuestra cómo','N4 Hacer'][h.nivel]:'Sin evaluar';
+        checkPage(8);
+        doc.setFontSize(8); doc.setFont('helvetica','normal');
+        doc.text(`• ${hab}`, M+2, y);
+        doc.setFont('helvetica','bold'); doc.setTextColor(37,99,168);
+        doc.text(nv, M+140, y);
+        doc.setTextColor(0,0,0);
+        if(h.obs){ doc.setFont('helvetica','italic'); doc.setTextColor(60,60,60); doc.setFontSize(7); doc.text(`  Docente: ${h.obs}`, M+4, y+4); y+=4; doc.setTextColor(0,0,0); }
+        if(h.comentEst){ doc.setFont('helvetica','italic'); doc.setTextColor(120,80,0); doc.setFontSize(7); doc.text(`  Estudiante: ${h.comentEst}`, M+4, y+4); y+=4; doc.setTextColor(0,0,0); }
+        y+=6;
+      });
+    });
+  });
+
+  // Cierre
+  checkPage(40);
+  addTitle('EVALUACIÓN FINAL');
+  addText(`Fecha de cierre: ${appData.fecha_cierre||'—'}`);
+  addText(`Docente responsable: ${appData.docente_cierre||'—'}`);
+  y+=4;
+  if(appData.conclusion){ addSub('Conclusión'); addText(appData.conclusion); y+=4; }
+  if(appData.recomendaciones){ addSub('Recomendaciones'); addText(appData.recomendaciones); }
+
+  // Pie de página
+  const pages = doc.getNumberOfPages();
+  for(let i=1;i<=pages;i++){
+    doc.setPage(i);
+    doc.setFontSize(8); doc.setTextColor(150);
+    doc.text(`Página ${i} de ${pages} — Libreta de Evaluación de Prácticas`, W/2, 292, {align:'center'});
+  }
+
+  const fn = `Libreta_${(appData.nombre||'estudiante').replace(/\s+/g,'_')}_${appData.cuatrimestre||'cuatrimestre'}.pdf`;
+  doc.save(fn);
+}
+
+// ===================== ARCHIVAR =====================
+function archivarEval() {
+  const archivadas = JSON.parse(localStorage.getItem('libreta_archivadas')||'[]');
+  const reg = { ...appData, fechaArchivo: new Date().toLocaleDateString('es-AR'), id: Date.now() };
+  archivadas.push(reg);
+  localStorage.setItem('libreta_archivadas', JSON.stringify(archivadas));
+  document.getElementById('msg-archivado').innerHTML =
+    `<div class="alert alert-success">✅ Evaluación archivada exitosamente el ${reg.fechaArchivo}</div>`;
+}
+
+function verArchivadas() {
+  const archivadas = JSON.parse(localStorage.getItem('libreta_archivadas')||'[]');
+  const panel = document.getElementById('archivadas-panel');
+  if(!archivadas.length){ panel.innerHTML='<div class="alert alert-warning">No hay evaluaciones archivadas.</div>'; return; }
+  let html = `<div class="card"><div class="card-title">📂 Evaluaciones Archivadas</div>`;
+  archivadas.slice().reverse().forEach(r=>{
+    html += `<div style="padding:10px;border:1.5px solid #e2e8f0;border-radius:8px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+      <div>
+        <div style="font-weight:700;">${r.nombre||'Sin nombre'}</div>
+        <div style="font-size:0.78rem;color:#64748b;">${r.cuatrimestre||''} · Archivada: ${r.fechaArchivo}</div>
+      </div>
+      <button class="btn btn-outline" style="font-size:0.75rem;padding:6px 12px;" onclick="cargarArchivada(${r.id})">📥 Cargar</button>
+    </div>`;
+  });
+  html += `</div>`;
+  panel.innerHTML = html;
+}
+
+function cargarArchivada(id) {
+  const archivadas = JSON.parse(localStorage.getItem('libreta_archivadas')||'[]');
+  const reg = archivadas.find(r=>r.id===id);
+  if(reg){ appData = reg; localStorage.setItem('libreta_enf_data', JSON.stringify(appData)); loadForm(); renderResumen(); alert('Evaluación cargada. Podés navegar por las pestañas.'); }
+}
+
+// ===================== INIT =====================
+initData();
+</script>
+</body>
+</html>
